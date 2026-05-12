@@ -1,0 +1,23 @@
+@mixin min($point) {
+    @media screen and (min-width: $point) {
+        @content;
+    }
+}
+
+@mixin max($point) {
+    @media screen and (max-width: $point) {
+        @content;
+    }
+}
+
+@mixin tab() {
+    @media screen and (max-width: 991px) {
+        @content;
+    }
+}
+
+@mixin sp() {
+    @media screen and (max-width: 767px) {
+        @content;
+    }
+}

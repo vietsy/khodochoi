@@ -1,0 +1,64 @@
+.payment {
+    width: 420px;
+    min-height: calc(100vh - 133px);
+    padding-bottom: 60px;
+    position: relative;
+    &__title {
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        align-items: flex-end;
+        font-size: 20px;
+        font-weight: bold;
+        line-height: 1;
+        margin-bottom: 20px;
+        span {
+            display: block;
+            font-size: 13px;
+            font-weight: 400;
+        }
+    }
+    &__content {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    &__info {
+        min-height: 36px;
+        display: flex;
+        gap: 20px;
+        align-items: flex-end;
+        justify-content: space-between;
+        font-size: 16px;
+    }
+    &__label {
+        width: 240px;
+        font-size: 16px;
+    }
+    &__input {
+        padding-right: 0 !important;
+        font-size: 16px;
+        :global(.ant-input-number-actions) {
+            display: none !important;
+        }
+    }
+
+    &__btn {
+        width: 100%;
+        position: absolute;
+        left: 0;
+        bottom: 0;
+    }
+    &__radio {
+        :global(.ant-radio-wrapper) {
+            font-size: 16px;
+        }
+    }
+    &__price {
+        font-weight: bold;
+        color: #0070f4;
+    }
+    input {
+        text-align: right !important;
+    }
+}
