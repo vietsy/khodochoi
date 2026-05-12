@@ -1,0 +1,26 @@
+@use "@/styles/mixin";
+
+body {
+    font-size: 14px;
+    color: #15171a;
+    line-height: 1.4;
+    background-color: #f5f5f5;
+}
+
+.pc-only {
+    display: block;
+    @include mixin.sp {
+        display: none;
+    }
+}
+
+.sp-only {
+    display: none;
+    @include mixin.sp {
+        display: block;
+    }
+}
+
+.ant-input-number {
+    width: 100%;
+}

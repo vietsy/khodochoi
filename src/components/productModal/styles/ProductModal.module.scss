@@ -1,0 +1,44 @@
+.modal {
+    padding: 48px;
+    width: 100%;
+    height: 100vh;
+    background: rgba(#000, 0.5);
+    backdrop-filter: blur(10px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999;
+    &__inner {
+        padding: 24px;
+        width: 90%;
+        max-width: 990px;
+        margin: 0 auto;
+        background: #fff;
+        border: 1px solid #1677ff;
+        border-radius: 24px;
+    }
+    &__title {
+        padding-bottom: 24px;
+        text-align: center;
+        font-size: 24px;
+        line-height: 1;
+        font-weight: bold;
+        border-bottom: 1px solid #1677ff;
+    }
+    &__wrapper {
+        padding: 24px 0 0;
+    }
+}
+
+.form {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 24px;
+    &__row {
+        width: calc(100% / 3 - (24px * 2 / 3));
+    }
+    input {
+        width: 100%;
+    }
+}

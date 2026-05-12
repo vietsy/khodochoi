@@ -1,0 +1,35 @@
+.products {
+    width: calc(100% - 436px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    &__item {
+        width: 100%;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 12px 8px;
+        box-shadow: 0 0.1rem 0.8rem rgba(102, 115, 143, 0.5);
+        border-radius: 12px;
+    }
+    &__col {
+        display: block;
+        width: calc(((100% - 60px) / 5) - 16px);
+        font-size: 16px;
+        line-height: 1.4;
+        &:nth-child(1) {
+            width: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        &:last-child {
+            text-align: right;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+        }
+    }
+}
