@@ -1,12 +1,11 @@
 "use client"
-import { ChangeEvent, useEffect, useState } from "react"
-import { Table, Button, Input, Space } from "antd"
+import { ChangeEvent, useCallback, useEffect, useState } from "react"
+import { Table, Button, Input } from "antd"
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import type { TableColumnsType } from "antd"
 import ProductModal from "@/components/productModal/ProductModal"
 import styles from "@/styles/products.module.scss"
-import { PRODUCTS_KEY } from "@/constand/constand"
-import { ProductType } from "@/types/product"
+import { ProductType } from "@/types/types"
 import Menu from "@/components/menu"
 
 const ProductsPage = () => {
@@ -15,19 +14,26 @@ const ProductsPage = () => {
     const [products, setProducts] = useState<ProductType[]>([])
     const [editId, setEditId] = useState<string | null>(null)
 
-    // Lấy dữ liệu từ localStorage khi mount
-    useEffect(() => {
-        const stored = localStorage.getItem(PRODUCTS_KEY)
-        if (stored) {
-            const parsed = JSON.parse(stored)
-            // thêm key để Table nhận diện
-            const withKeys = parsed.map((item: ProductType, index: number) => ({
+    const fetchProducts = useCallback(async () => {
+        try {
+            const response = await fetch("/api/products")
+            if (!response.ok) {
+                throw new Error("Không thể tải danh sách sản phẩm")
+            }
+            const productsData = await response.json()
+            const withKeys = productsData.map((item: ProductType, index: number) => ({
                 ...item,
                 key: index,
             }))
             setProducts(withKeys)
+        } catch (error) {
+            console.error(error)
         }
-    }, [showModal])
+    }, [])
+
+    useEffect(() => {
+        fetchProducts()
+    }, [fetchProducts])
 
     // Lọc theo searchInput
     const filteredProducts = products.filter(
@@ -43,13 +49,17 @@ const ProductsPage = () => {
         setShowModal(true)
     }
 
-    const handleDelete = (id: string) => {
-        const stored = localStorage.getItem(PRODUCTS_KEY)
-        if (stored) {
-            const products = JSON.parse(stored)
-            const newProducts = products.filter((p: ProductType) => p.id !== id)
-            localStorage.setItem(PRODUCTS_KEY, JSON.stringify(newProducts))
-            setProducts(newProducts.map((item: ProductType, index: number) => ({ ...item, key: index })))
+    const handleDelete = async (id: string) => {
+        try {
+            const response = await fetch(`/api/products?id=${id}`, {
+                method: "DELETE",
+            })
+            if (!response.ok) {
+                throw new Error("Xóa sản phẩm thất bại")
+            }
+            setProducts((current) => current.filter((item) => item.id !== id))
+        } catch (error) {
+            console.error(error)
         }
     }
 
@@ -58,23 +68,24 @@ const ProductsPage = () => {
             title: "",
             key: "action",
             render: (_, record) => (
-                <Space>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <Button color="primary" variant="solid" onClick={() => handleEdit(record.id)}>
                         <EditOutlined />
                     </Button>
                     <Button color="danger" variant="outlined" onClick={() => handleDelete(record.id)}>
                         <DeleteOutlined />
                     </Button>
-                </Space>
+                </div>
             ),
-            width: "100px",
+            width: "80px",
         },
-        { title: "Mã hàng", dataIndex: "maHang", key: "maHang" },
-        { title: "Tên hàng", dataIndex: "tenHang", key: "tenHang" },
-        { title: "Giá bán", dataIndex: "giaBan", key: "giaBan" },
-        { title: "Giá vốn", dataIndex: "giaVon", key: "giaVon" },
-        { title: "Số lượng", dataIndex: "tonKho", key: "tonKho" },
-        { title: "Thời gian tạo", dataIndex: "thoiGianTao", key: "thoiGianTao" },
+        { title: "Mã hàng", dataIndex: "maHang", key: "maHang", ellipsis: true },
+        { title: "Tên hàng", dataIndex: "tenHang", key: "tenHang", ellipsis: true },
+        { title: "Giá vốn", dataIndex: "giaVon", key: "giaVon", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0) },
+        { title: "Giá bán sỉ", dataIndex: "giaBanSi", key: "giaBanSi", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0) },
+        { title: "Giá bán lẻ", dataIndex: "giaBanLe", key: "giaBanLe", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0) },
+        { title: "Số lượng", dataIndex: "tonKho", key: "tonKho", width: "120px" },
+        { title: "Thời gian tạo", dataIndex: "thoiGianTao", key: "thoiGianTao", width: "120px" },
     ]
 
     const handleShowModal = () => {
@@ -83,7 +94,7 @@ const ProductsPage = () => {
 
     return (
         <>
-            {showModal && <ProductModal closeModal={setShowModal} editId={editId} setEditId={() => setEditId(null)} />}
+            {showModal && <ProductModal closeModal={setShowModal} editId={editId} setEditId={() => setEditId(null)} onSaved={fetchProducts} />}
             <Menu />
             <main className={styles.products}>
                 <div className={styles.products__head}>
@@ -100,7 +111,7 @@ const ProductsPage = () => {
                         Tạo mới
                     </Button>
                 </div>
-                <Table dataSource={filteredProducts} columns={columns} className={styles.table} pagination={{ pageSize: 30 }} />;
+                <Table dataSource={filteredProducts} columns={columns} className={styles.table} pagination={{ pageSize: 20 }} />
             </main>
         </>
     )

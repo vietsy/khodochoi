@@ -58,3 +58,20 @@
         }
     }
 }
+
+.table {
+    table {
+        border-collapse: collapse !important;
+        thead {
+            th {
+                background: #1677ff !important;
+                color: #fff !important;
+            }
+        }
+        tbody {
+            td {
+                border: 1px solid #a3ccff !important;
+            }
+        }
+    }
+}

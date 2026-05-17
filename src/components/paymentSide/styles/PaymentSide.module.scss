@@ -1,8 +1,17 @@
+@use "@/styles/mixin";
+
 .payment {
     width: 420px;
     min-height: calc(100vh - 133px);
     padding-bottom: 60px;
     position: relative;
+
+    @include mixin.tab {
+        width: 100%;
+        min-height: auto;
+        padding: 32px 0 0;
+    }
+
     &__title {
         display: flex;
         gap: 12px;
@@ -43,11 +52,27 @@
         }
     }
 
-    &__btn {
+    &__btns {
         width: 100%;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: space-between;
         position: absolute;
         left: 0;
         bottom: 0;
+
+        @include mixin.tab {
+            position: unset;
+            padding-top: 32px;
+        }
+
+        button {
+            width: calc(50% - 6px);
+        }
+    }
+    &__btn {
+        width: 100%;
     }
     &__radio {
         :global(.ant-radio-wrapper) {

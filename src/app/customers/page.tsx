@@ -1,26 +1,12 @@
 "use client"
-import { ChangeEvent, useEffect, useState } from "react"
+import { ChangeEvent, useCallback, useEffect, useState } from "react"
 import { Table, Button, Input, Modal, Form, InputNumber } from "antd"
 import { PlusOutlined, SearchOutlined } from "@ant-design/icons"
-import type { InputNumberProps, TableColumnsType } from "antd"
+import type { TableColumnsType } from "antd"
 import styles from "@/styles/products.module.scss"
 import Menu from "@/components/menu"
-
-interface CustomerType {
-    maKhachHang: string
-    tenKhachHang: string
-    dt: string
-    noHienTai: number
-    tongban: number
-}
-
-const STORAGE_KEY = "CUSTOMERS"
-
-const formatter: InputNumberProps<number>["formatter"] = (value) => {
-    const [start, end] = `${value}`.split(".") || []
-    const v = `${start}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-    return `${end ? `${v}.${end}` : `${v}`}`
-}
+import { formatter } from "@/ultils/format"
+import { CustomerType } from "@/types/types"
 
 const Customers = () => {
     const [showModal, setShowModal] = useState<boolean>(false)
@@ -28,12 +14,22 @@ const Customers = () => {
     const [customers, setCustomers] = useState<CustomerType[]>([])
     const [form] = Form.useForm()
 
-    useEffect(() => {
-        const stored = localStorage.getItem(STORAGE_KEY)
-        if (stored) {
-            setCustomers(JSON.parse(stored))
+    const fetchCustomers = useCallback(async () => {
+        try {
+            const response = await fetch("/api/customers")
+            if (!response.ok) {
+                throw new Error("Không thể tải danh sách khách hàng")
+            }
+            const customersData = await response.json()
+            setCustomers(customersData)
+        } catch (error) {
+            console.error(error)
         }
     }, [])
+
+    useEffect(() => {
+        fetchCustomers()
+    }, [fetchCustomers])
 
     const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
         setSearchInput(e.target.value)
@@ -43,8 +39,8 @@ const Customers = () => {
         { title: "Mã khách hàng", dataIndex: "maKhachHang", key: "maKhachHang" },
         { title: "Tên khách hàng", dataIndex: "tenKhachHang", key: "tenKhachHang" },
         { title: "Điện thoại", dataIndex: "dt", key: "dt" },
-        { title: "Nợ hiện tại", dataIndex: "noHienTai", key: "noHienTai" },
-        { title: "Tổng bán", dataIndex: "tongban", key: "tongban" },
+        { title: "Nợ hiện tại", dataIndex: "noHienTai", key: "noHienTai", render: (v) => (v ? v.toLocaleString("en-US") : 0) },
+        { title: "Tổng bán", dataIndex: "tongban", key: "tongban", render: (v) => (v ? v.toLocaleString("en-US") : 0) },
     ]
 
     const handleShowModal = () => {
@@ -63,18 +59,32 @@ const Customers = () => {
         setShowModal(true)
     }
 
-    const handleSaveCustomer = () => {
-        form.validateFields().then((values: CustomerType) => {
+    const handleSaveCustomer = async () => {
+        try {
+            const values = (await form.validateFields()) as CustomerType
             const newCustomer: CustomerType = {
                 ...values,
                 noHienTai: values.noHienTai || 0,
                 tongban: values.tongban || 0,
             }
-            const updated = [...customers, newCustomer]
-            setCustomers(updated)
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+
+            const response = await fetch("/api/customers", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newCustomer),
+            })
+
+            if (!response.ok) {
+                const errorBody = await response.json().catch(() => null)
+                throw new Error(errorBody?.message || "Lưu khách hàng thất bại")
+            }
+
+            const savedCustomer = await response.json()
+            setCustomers((current) => [...current, savedCustomer])
             setShowModal(false)
-        })
+        } catch (error) {
+            console.error(error)
+        }
     }
 
     const filteredCustomers = customers.filter(

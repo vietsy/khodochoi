@@ -1,13 +1,21 @@
+@use "@/styles/mixin";
+
 .products {
     width: calc(100% - 436px);
     display: flex;
     flex-direction: column;
     gap: 16px;
+
+    @include mixin.tab {
+        width: 100%;
+    }
+
     &__item {
         width: 100%;
         display: flex;
         align-items: flex-end;
         justify-content: space-between;
+        flex-wrap: wrap;
         gap: 8px;
         padding: 12px 8px;
         box-shadow: 0 0.1rem 0.8rem rgba(102, 115, 143, 0.5);
@@ -30,6 +38,23 @@
         }
         input {
             width: 100%;
+        }
+    }
+    &__total {
+        font-size: 18px;
+        color: #0070f4;
+        text-align: right;
+        font-weight: bold;
+    }
+    &__note {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        margin-top: 8px;
+        font-size: 14px;
+        color: #555;
+        span {
+            width: 80px;
         }
     }
 }

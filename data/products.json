@@ -1,0 +1,24 @@
+[
+  {
+    "maHang": "A001",
+    "tenHang": "Xe",
+    "nhomHang": "Bê kính",
+    "giaVon": 1100,
+    "giaBanSi": 1500,
+    "giaBanLe": 2000,
+    "tonKho": 100,
+    "id": "A001_1778901144309",
+    "thoiGianTao": "10:12:24 16/5/2026"
+  },
+  {
+    "maHang": "B002",
+    "tenHang": "Bxe",
+    "nhomHang": "Cá sấu",
+    "giaVon": 1000,
+    "giaBanSi": 2000,
+    "giaBanLe": 3000,
+    "tonKho": 100,
+    "id": "B002_1778925295835",
+    "thoiGianTao": "16:54:55 16/5/2026"
+  }
+]

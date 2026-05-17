@@ -1,0 +1,16 @@
+[
+  {
+    "maKhachHang": "KH000001",
+    "tenKhachHang": "A",
+    "dt": "",
+    "noHienTai": 18000,
+    "tongban": 84000
+  },
+  {
+    "maKhachHang": "KH000002",
+    "tenKhachHang": "B",
+    "dt": "",
+    "noHienTai": 57000,
+    "tongban": 24500
+  }
+]

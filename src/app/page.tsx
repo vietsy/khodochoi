@@ -1,20 +1,14 @@
 "use client"
-import { ChangeEvent, useEffect, useRef, useState } from "react"
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react"
 import { Button, Input } from "antd"
 import { CloseOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 
 import styles from "@/styles/invoice.module.scss"
 import PaymentSide from "@/components/paymentSide/PaymentSide"
 import ProductSelected from "@/components/productSelected/ProductSelected"
-import { PRODUCTS_KEY } from "@/constand/constand"
-import { ProductType } from "@/types/product"
+import { ProductType, Tab } from "@/types/types"
 import Menu from "@/components/menu"
-
-interface Tab {
-    key: string
-    title: string
-    products: { product: ProductType; quantity: number }[]
-}
+import dayjs from "dayjs"
 
 const STORAGE_KEY = "INVOICES"
 
@@ -25,34 +19,117 @@ const InvoicePage = () => {
     const [allProducts, setAllProducts] = useState<ProductType[]>([])
     const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null)
     const [quantity, setQuantity] = useState<number>(1)
+    const [priceType, setPriceType] = useState<"giaBanSi" | "giaBanLe">("giaBanSi")
 
     const quantityRef = useRef<any>(null)
 
-    // Load sản phẩm từ localStorage
-    useEffect(() => {
-        const stored = localStorage.getItem(PRODUCTS_KEY)
-        if (stored) setAllProducts(JSON.parse(stored))
-    }, [])
-
-    // Load hóa đơn từ localStorage
-    useEffect(() => {
-        const stored = localStorage.getItem(STORAGE_KEY)
-        if (stored) {
-            const parsed: Tab[] = JSON.parse(stored)
-            // đảm bảo mỗi tab đều có products là mảng
-            const normalized = parsed.map((tab) => ({
-                ...tab,
-                products: Array.isArray(tab.products) ? tab.products : [],
-            }))
-            setTabs(normalized)
-            if (normalized.length > 0) setActiveTab(normalized[0].key)
-        } else {
-            const defaultTab: Tab = { key: "1", title: "Hóa đơn 1", products: [] }
-            setTabs([defaultTab])
-            setActiveTab("1")
-            localStorage.setItem(STORAGE_KEY, JSON.stringify([defaultTab]))
+    const fetchProducts = useCallback(async () => {
+        try {
+            const response = await fetch("/api/products")
+            if (!response.ok) {
+                throw new Error("Không thể tải danh sách sản phẩm")
+            }
+            const productsData: ProductType[] = await response.json()
+            setAllProducts(productsData)
+        } catch (error) {
+            console.error(error)
         }
     }, [])
+
+    useEffect(() => {
+        fetchProducts()
+    }, [fetchProducts])
+
+    const saveDrafts = async (newTabs: Tab[]) => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newTabs))
+        } catch (error) {
+            console.warn("Không lưu được draft vào localStorage", error)
+        }
+
+        try {
+            await fetch("/api/drafts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newTabs),
+            })
+        } catch (error) {
+            console.error("Không lưu được bản nháp vào DB", error)
+        }
+    }
+
+    // Load draft hóa đơn từ DB, fallback localStorage nếu cần
+    useEffect(() => {
+        const loadDrafts = async () => {
+            try {
+                const response = await fetch("/api/drafts")
+                if (!response.ok) throw new Error("Không lấy được bản nháp từ DB")
+                const data: Tab[] = await response.json()
+                if (Array.isArray(data) && data.length > 0) {
+                    const normalized = data.map((tab) => ({
+                        ...tab,
+                        products: Array.isArray(tab.products) ? tab.products : [],
+                        customerCode: tab.customerCode ?? "",
+                        customerName: tab.customerName ?? "",
+                        paid: tab.paid ?? false,
+                        priceType: tab.priceType ?? priceType,
+                        paymentMethod: tab.paymentMethod ?? "tienMat",
+                    }))
+                    setTabs(normalized)
+                    setActiveTab(normalized[0].key)
+                    return
+                }
+            } catch (error) {
+                console.error(error)
+            }
+
+            const stored = localStorage.getItem(STORAGE_KEY)
+            if (stored) {
+                const parsed: Tab[] = JSON.parse(stored)
+                const normalized = parsed.map((tab) => ({
+                    ...tab,
+                    products: Array.isArray(tab.products) ? tab.products : [],
+                    customerCode: tab.customerCode ?? "",
+                    customerName: tab.customerName ?? "",
+                    paid: tab.paid ?? false,
+                    priceType: tab.priceType ?? priceType,
+                    paymentMethod: tab.paymentMethod ?? "tienMat",
+                }))
+                setTabs(normalized)
+                if (normalized.length > 0) setActiveTab(normalized[0].key)
+                return
+            }
+
+            const defaultTab: Tab = {
+                key: "1",
+                title: "Hóa đơn 1",
+                products: [],
+                customerCode: "",
+                customerName: "",
+                paid: false,
+                priceType: priceType,
+                paymentMethod: "tienMat",
+            }
+            setTabs([defaultTab])
+            setActiveTab("1")
+            saveDrafts([defaultTab])
+        }
+
+        loadDrafts()
+    }, [])
+
+    // sync global priceType when active tab changes
+    useEffect(() => {
+        const current = tabs.find((t) => t.key === activeTab)
+        if (current && current.priceType) setPriceType(current.priceType)
+    }, [activeTab, tabs])
+
+    const handlePriceTypeChange = (newType: "giaBanSi" | "giaBanLe") => {
+        setPriceType(newType)
+        const newTabs = tabs.map((t) => (t.key === activeTab ? { ...t, priceType: newType } : t))
+        setTabs(newTabs)
+        saveDrafts(newTabs)
+    }
 
     const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
         setSearchInput(e.target.value)
@@ -61,20 +138,35 @@ const InvoicePage = () => {
 
     const handleAddTab = () => {
         const newKey = `${Date.now()}`
-        const newTab: Tab = { key: newKey, title: `Hóa đơn ${tabs.length + 1}`, products: [] } // thêm products: []
+        const newTab: Tab = {
+            key: newKey,
+            title: `HĐ ${dayjs().format("HH:mmss")}`,
+            products: [],
+            customerCode: "",
+            customerName: "",
+            paid: false,
+            priceType: priceType,
+            paymentMethod: "tienMat",
+        }
         const newTabs = [...tabs, newTab]
         setTabs(newTabs)
         setActiveTab(newKey)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newTabs))
+        saveDrafts(newTabs)
     }
 
     const handleRemoveTab = (key: string) => {
-        const newTabs = tabs.filter((tab) => tab.key !== key)
-        setTabs(newTabs)
-        if (activeTab === key && newTabs.length > 0) {
+        let newTabs = tabs.filter((tab) => tab.key !== key)
+
+        if (newTabs.length === 0) {
+            const defaultTab: Tab = { key: "1", title: "Hóa đơn 1", products: [] }
+            newTabs = [defaultTab]
+            setActiveTab(defaultTab.key)
+        } else {
             setActiveTab(newTabs[0].key)
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newTabs))
+
+        setTabs(newTabs)
+        saveDrafts(newTabs)
     }
 
     // Khi chọn sản phẩm từ suggest
@@ -88,7 +180,7 @@ const InvoicePage = () => {
 
     // Khi Enter số lượng
     const handleQuantityEnter = () => {
-        if (!selectedProduct) return
+        if (!selectedProduct || quantity <= 0) return
 
         const newTabs = tabs.map((tab) => {
             if (tab.key === activeTab) {
@@ -106,12 +198,9 @@ const InvoicePage = () => {
             return tab
         })
 
-        // cập nhật state ngay lập tức
         setTabs(newTabs)
-        // ghi xuống localStorage
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newTabs))
+        saveDrafts(newTabs)
 
-        // reset input
         setSelectedProduct(null)
         setSearchInput("")
         setQuantity(1)
@@ -154,7 +243,7 @@ const InvoicePage = () => {
                                         <span>Mã: {item.maHang}</span>
                                         <span>Tồn: {item.tonKho}</span>
                                     </p>
-                                    <p className={styles.suggest__price}>{item.giaBan?.toLocaleString("vi-VN").replace(/\./g, ",")}</p>
+                                    <p className={styles.suggest__price}>{item.giaBanLe?.toLocaleString("en-US")}</p>
                                 </li>
                             ))}
                         </ul>
@@ -186,13 +275,22 @@ const InvoicePage = () => {
                     <div key={tab.key} className={styles.tabpanel} role="tabpanel" hidden={activeTab !== tab.key}>
                         <ProductSelected
                             products={tab.products}
+                            priceType={priceType}
                             onUpdate={(updatedProducts) => {
                                 const newTabs = tabs.map((t) => (t.key === activeTab ? { ...t, products: updatedProducts } : t))
                                 setTabs(newTabs)
-                                localStorage.setItem("INVOICES", JSON.stringify(newTabs))
+                                saveDrafts(newTabs)
                             }}
                         />
-                        <PaymentSide products={tab.products} activeTab={activeTab} tabs={tabs} setTabs={setTabs} />
+                        <PaymentSide
+                            products={tab.products}
+                            activeTab={activeTab}
+                            tabs={tabs}
+                            setTabs={setTabs}
+                            saveDrafts={saveDrafts}
+                            priceType={priceType}
+                            onPriceTypeChange={handlePriceTypeChange}
+                        />
                     </div>
                 ))}
             </main>
