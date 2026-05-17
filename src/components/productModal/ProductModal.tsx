@@ -3,21 +3,22 @@
 import { useEffect, useRef, useState } from "react"
 import { Button, Divider, Form, Input, InputNumber, Select, Space, message } from "antd"
 import { PlusOutlined } from "@ant-design/icons"
-import type { InputRef, InputNumberProps, FormProps } from "antd"
+import type { InputRef, FormProps } from "antd"
 import { nhomHangOptionsData } from "@/__mock__/nhomHang"
 import styles from "@/components/productModal/styles/ProductModal.module.scss"
-import { NHOM_HANG_KEY, PRODUCTS_KEY } from "@/constand/constand"
-import { ProductType } from "@/types/product"
+import { ProductType } from "@/types/types"
+import { formatter } from "@/ultils/format"
 
 interface ProductModalProps {
     closeModal: (value: boolean) => void
     editId?: string | null
     setEditId?: () => void
+    onSaved?: () => void
 }
 
 let index = 0
 
-const ProductModal = ({ closeModal, editId, setEditId }: ProductModalProps) => {
+const ProductModal = ({ closeModal, editId, setEditId, onSaved }: ProductModalProps) => {
     const [loading, setLoading] = useState<boolean>(false)
     const [nhomHangOptions, setNhomHangOptions] = useState<string[]>([])
     const [nhomHangName, setNhomHangName] = useState("")
@@ -27,78 +28,97 @@ const ProductModal = ({ closeModal, editId, setEditId }: ProductModalProps) => {
 
     useEffect(() => {
         if (editId) {
-            const stored = localStorage.getItem(PRODUCTS_KEY)
-            if (stored) {
-                const products = JSON.parse(stored)
-                const product = products.find((p: any) => p.id === editId)
-                if (product) {
-                    form.setFieldsValue(product) // set dữ liệu khi edit
-                }
-            }
+            fetch(`/api/products?id=${editId}`)
+                .then(async (response) => {
+                    if (!response.ok) {
+                        throw new Error("Không tìm thấy sản phẩm")
+                    }
+                    return response.json()
+                })
+                .then((product) => {
+                    form.setFieldsValue(product)
+                })
+                .catch(() => {
+                    message.error("Không lấy được dữ liệu sản phẩm để sửa")
+                })
         } else {
             form.resetFields() // reset form khi thêm mới
         }
     }, [editId, form])
 
-    // Lấy dữ liệu từ localStorage khi mount
+    // Lấy dữ liệu nhóm hàng từ API khi mount
     useEffect(() => {
-        const stored = localStorage.getItem(NHOM_HANG_KEY)
-        if (stored) {
-            setNhomHangOptions(JSON.parse(stored))
-        } else {
-            setNhomHangOptions(nhomHangOptionsData)
-            localStorage.setItem(NHOM_HANG_KEY, JSON.stringify(nhomHangOptionsData))
-        }
+        fetch("/api/nhom-hang")
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error("Không lấy được nhóm hàng")
+                }
+                return response.json()
+            })
+            .then((options) => {
+                setNhomHangOptions(options)
+            })
+            .catch(() => {
+                setNhomHangOptions(nhomHangOptionsData)
+            })
     }, [])
 
     const onNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setNhomHangName(event.target.value)
     }
 
-    const addNhomHang = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+    const addNhomHang = async (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
         e.preventDefault()
         const newItem = nhomHangName || `Nhóm ${index++}`
-        const newOptions = [...nhomHangOptions, newItem]
-        setNhomHangOptions(newOptions)
-        localStorage.setItem(NHOM_HANG_KEY, JSON.stringify(newOptions)) // cập nhật localStorage
-        setNhomHangName("")
-        setTimeout(() => {
-            inputRef.current?.focus()
-        }, 0)
+
+        try {
+            const response = await fetch("/api/nhom-hang", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ item: newItem }),
+            })
+            if (!response.ok) {
+                throw new Error("Không thể thêm nhóm hàng")
+            }
+            const updatedOptions = await response.json()
+            setNhomHangOptions(updatedOptions)
+            setNhomHangName("")
+            setTimeout(() => {
+                inputRef.current?.focus()
+            }, 0)
+        } catch (error) {
+            message.error("Thêm nhóm hàng thất bại")
+        }
     }
 
-    const formatter: InputNumberProps<number>["formatter"] = (value) => {
-        const [start, end] = `${value}`.split(".") || []
-        const v = `${start}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-        return `${end ? `${v}.${end}` : `${v}`}`
-    }
-
-    const onFinish: FormProps<ProductType>["onFinish"] = (values) => {
+    const onFinish: FormProps<ProductType>["onFinish"] = async (values) => {
         setLoading(true)
         try {
-            const stored = localStorage.getItem(PRODUCTS_KEY)
-            const products = stored ? JSON.parse(stored) : []
+            const method = editId ? "PUT" : "POST"
+            const url = editId ? `/api/products?id=${editId}` : "/api/products"
+            const response = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(values),
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null)
+                throw new Error(errorData?.message || "Lưu sản phẩm thất bại")
+            }
 
             if (editId) {
-                // update sản phẩm
-                const newProducts = products.map((p: any) => (p.id === editId ? { ...p, ...values } : p))
-                localStorage.setItem(PRODUCTS_KEY, JSON.stringify(newProducts))
                 setEditId && setEditId()
                 message.success("Cập nhật sản phẩm thành công!")
             } else {
-                // thêm mới
-                const newProduct = {
-                    ...values,
-                    id: `${values.maHang}_${Date.now()}`,
-                    thoiGianTao: new Date().toLocaleString("vi-VN"),
-                }
-                const newProducts = [...products, newProduct]
-                localStorage.setItem(PRODUCTS_KEY, JSON.stringify(newProducts))
                 message.success("Thêm sản phẩm thành công!")
             }
+
+            form.resetFields()
             closeModal(false)
+            onSaved && onSaved()
         } catch (error) {
-            message.error("Có lỗi xảy ra khi tạo sản phẩm!")
+            message.error((error as Error).message || "Có lỗi xảy ra khi tạo sản phẩm!")
         } finally {
             setLoading(false)
         }
@@ -106,7 +126,8 @@ const ProductModal = ({ closeModal, editId, setEditId }: ProductModalProps) => {
 
     const handleCloseModal = () => {
         closeModal(false)
-        form.resetFields() // reset form về trạng thái ban đầu
+        form.resetFields()
+        setEditId && setEditId()
     }
 
     return (
@@ -115,7 +136,13 @@ const ProductModal = ({ closeModal, editId, setEditId }: ProductModalProps) => {
                 <div className={styles.modal__inner}>
                     <h2 className={styles.modal__title}>Thêm Sản Phẩm</h2>
                     <div className={styles.modal__wrapper}>
-                        <Form form={form} name="product-new" className={styles.form} initialValues={{ giaVon: 0, giaBan: 0, tonKho: 0 }} onFinish={onFinish}>
+                        <Form
+                            form={form}
+                            name="product-new"
+                            className={styles.form}
+                            initialValues={{ giaVon: 0, giaBanSi: 0, giaBanLe: 0, tonKho: 0 }}
+                            onFinish={onFinish}
+                        >
                             <div className={styles.form__row}>
                                 <Form.Item layout="vertical" label="Mã hàng" name="maHang" rules={[{ required: true, message: "Vui lòng nhập mã hàng!" }]}>
                                     <Input />
@@ -170,7 +197,12 @@ const ProductModal = ({ closeModal, editId, setEditId }: ProductModalProps) => {
                                 </Form.Item>
                             </div>
                             <div className={styles.form__row}>
-                                <Form.Item layout="vertical" label="Giá bán (vnđ)" name="giaBan">
+                                <Form.Item layout="vertical" label="Giá bán sỉ" name="giaBanSi">
+                                    <InputNumber<number> formatter={formatter} parser={(value) => value?.replace(/\$\s?|(,*)/g, "") as unknown as number} />
+                                </Form.Item>
+                            </div>
+                            <div className={styles.form__row}>
+                                <Form.Item layout="vertical" label="Giá bán lẻ" name="giaBanLe">
                                     <InputNumber<number> formatter={formatter} parser={(value) => value?.replace(/\$\s?|(,*)/g, "") as unknown as number} />
                                 </Form.Item>
                             </div>
@@ -179,7 +211,7 @@ const ProductModal = ({ closeModal, editId, setEditId }: ProductModalProps) => {
                                     <InputNumber />
                                 </Form.Item>
                             </div>
-                            <Space>
+                            <Space style={{ width: "100%" }}>
                                 <Button onClick={handleCloseModal}>Đóng</Button>
                                 <Button type="primary" htmlType="submit" loading={loading}>
                                     Lưu

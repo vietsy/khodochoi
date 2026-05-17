@@ -1,3 +1,5 @@
+@use "@/styles/mixin";
+
 .header {
     display: flex;
     align-items: flex-end;
@@ -15,6 +17,10 @@
     gap: 16px;
     position: relative;
 
+    @include mixin.tab {
+        width: calc(30% - 8px);
+    }
+
     input {
         &::placeholder {
             color: #666;
@@ -22,10 +28,13 @@
     }
 
     &__input {
-        width: calc(100% - 136px);
+        width: calc(100% - 96px);
     }
     &__sl {
         width: 120px;
+        @include mixin.tab {
+            width: 80px;
+        }
     }
 }
 
@@ -37,6 +46,10 @@
     gap: 4px;
     position: relative;
     overflow-y: auto;
+
+    @include mixin.tab {
+        width: calc(70% - 8px);
+    }
 
     &::after {
         content: "";
@@ -124,6 +137,11 @@
     display: flex;
     justify-content: space-between;
     gap: 16px;
+
+    @include mixin.tab {
+        flex-direction: column;
+    }
+
     &[hidden] {
         display: none;
     }
@@ -136,6 +154,8 @@
         display: flex;
         justify-content: space-between;
         gap: 16px;
+        @include mixin.tab {
+        }
     }
 }
 

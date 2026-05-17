@@ -1,0 +1,160 @@
+[
+  {
+    "id": "1778936863964",
+    "date": "16/05/2026 20:07",
+    "customerCode": "KH000002",
+    "customerName": "B",
+    "products": [
+      {
+        "product": {
+          "maHang": "A001",
+          "tenHang": "Xe",
+          "nhomHang": "Bê kính",
+          "giaVon": 1100,
+          "giaBanSi": 1500,
+          "giaBanLe": 2000,
+          "tonKho": 100,
+          "id": "A001_1778901144309",
+          "thoiGianTao": "10:12:24 16/5/2026"
+        },
+        "quantity": 4,
+        "note": "T1"
+      },
+      {
+        "product": {
+          "maHang": "B002",
+          "tenHang": "Bxe",
+          "nhomHang": "Cá sấu",
+          "giaVon": 1000,
+          "giaBanSi": 2000,
+          "giaBanLe": 3000,
+          "tonKho": 100,
+          "id": "B002_1778925295835",
+          "thoiGianTao": "16:54:55 16/5/2026"
+        },
+        "quantity": 4
+      }
+    ],
+    "totalAmount": 20000,
+    "discount": 0,
+    "discountedAmount": 20000,
+    "customerPay": 20000,
+    "change": 0,
+    "paymentMethod": "tienMat"
+  },
+  {
+    "id": "1778936645424",
+    "date": "16/05/2026 20:04",
+    "customerCode": "KH000001",
+    "customerName": "A",
+    "products": [
+      {
+        "product": {
+          "maHang": "A001",
+          "tenHang": "Xe",
+          "nhomHang": "Bê kính",
+          "giaVon": 1100,
+          "giaBanSi": 1500,
+          "giaBanLe": 2000,
+          "tonKho": 100,
+          "id": "A001_1778901144309",
+          "thoiGianTao": "10:12:24 16/5/2026"
+        },
+        "quantity": 4,
+        "note": "T1"
+      },
+      {
+        "product": {
+          "maHang": "B002",
+          "tenHang": "Bxe",
+          "nhomHang": "Cá sấu",
+          "giaVon": 1000,
+          "giaBanSi": 2000,
+          "giaBanLe": 3000,
+          "tonKho": 100,
+          "id": "B002_1778925295835",
+          "thoiGianTao": "16:54:55 16/5/2026"
+        },
+        "quantity": 4
+      }
+    ],
+    "totalAmount": 20000,
+    "discount": 0,
+    "discountedAmount": 20000,
+    "customerPay": 2000,
+    "change": -18000,
+    "paymentMethod": "tienMat"
+  },
+  {
+    "id": "1778936125993",
+    "date": "16/05/2026 19:55",
+    "customerCode": "KH000002",
+    "customerName": "B",
+    "products": [
+      {
+        "product": {
+          "maHang": "A001",
+          "tenHang": "Xe",
+          "nhomHang": "Bê kính",
+          "giaVon": 1100,
+          "giaBanSi": 1500,
+          "giaBanLe": 2000,
+          "tonKho": 100,
+          "id": "A001_1778901144309",
+          "thoiGianTao": "10:12:24 16/5/2026"
+        },
+        "quantity": 3,
+        "note": "ABC"
+      }
+    ],
+    "totalAmount": 4500,
+    "discount": 0,
+    "discountedAmount": 4500,
+    "customerPay": 7500,
+    "change": 3000,
+    "paymentMethod": "tienMat"
+  },
+  {
+    "id": "1778929118548",
+    "date": "16/05/2026 17:58",
+    "customerCode": "KH000001",
+    "customerName": "A",
+    "products": [
+      {
+        "product": {
+          "maHang": "A001",
+          "tenHang": "Xe",
+          "nhomHang": "Bê kính",
+          "giaVon": 1100,
+          "giaBanSi": 1500,
+          "giaBanLe": 2000,
+          "tonKho": 100,
+          "id": "A001_1778901144309",
+          "thoiGianTao": "10:12:24 16/5/2026"
+        },
+        "quantity": 2,
+        "note": "Hello"
+      },
+      {
+        "product": {
+          "maHang": "B002",
+          "tenHang": "Bxe",
+          "nhomHang": "Cá sấu",
+          "giaVon": 1000,
+          "giaBanSi": 2000,
+          "giaBanLe": 3000,
+          "tonKho": 100,
+          "id": "B002_1778925295835",
+          "thoiGianTao": "16:54:55 16/5/2026"
+        },
+        "quantity": 20
+      }
+    ],
+    "totalAmount": 64000,
+    "discount": 0,
+    "discountedAmount": 64000,
+    "customerPay": 64000,
+    "change": 0,
+    "paymentMethod": "tienMat"
+  }
+]
