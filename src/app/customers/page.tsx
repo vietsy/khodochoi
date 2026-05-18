@@ -1,7 +1,7 @@
 "use client"
 import { ChangeEvent, useCallback, useEffect, useState } from "react"
-import { Table, Button, Input, Modal, Form, InputNumber } from "antd"
-import { PlusOutlined, SearchOutlined } from "@ant-design/icons"
+import { Table, Button, Input, Modal, Form, InputNumber, message } from "antd"
+import { PlusOutlined, SearchOutlined, DeleteOutlined } from "@ant-design/icons"
 import type { TableColumnsType } from "antd"
 import styles from "@/styles/products.module.scss"
 import Menu from "@/components/menu"
@@ -12,10 +12,12 @@ const Customers = () => {
     const [showModal, setShowModal] = useState<boolean>(false)
     const [searchInput, setSearchInput] = useState<string>("")
     const [customers, setCustomers] = useState<CustomerType[]>([])
+    const [loading, setLoading] = useState<boolean>(false)
     const [form] = Form.useForm()
 
     const fetchCustomers = useCallback(async () => {
         try {
+            setLoading(true)
             const response = await fetch("/api/customers")
             if (!response.ok) {
                 throw new Error("Không thể tải danh sách khách hàng")
@@ -24,6 +26,8 @@ const Customers = () => {
             setCustomers(customersData)
         } catch (error) {
             console.error(error)
+        } finally {
+            setLoading(false)
         }
     }, [])
 
@@ -36,11 +40,54 @@ const Customers = () => {
     }
 
     const columns: TableColumnsType<CustomerType> = [
-        { title: "Mã khách hàng", dataIndex: "maKhachHang", key: "maKhachHang" },
-        { title: "Tên khách hàng", dataIndex: "tenKhachHang", key: "tenKhachHang" },
-        { title: "Điện thoại", dataIndex: "dt", key: "dt" },
-        { title: "Nợ hiện tại", dataIndex: "noHienTai", key: "noHienTai", render: (v) => (v ? v.toLocaleString("en-US") : 0) },
-        { title: "Tổng bán", dataIndex: "tongban", key: "tongban", render: (v) => (v ? v.toLocaleString("en-US") : 0) },
+        { title: "Mã khách hàng", dataIndex: "maKhachHang", key: "maKhachHang", ellipsis: true },
+        { title: "Tên khách hàng", dataIndex: "tenKhachHang", key: "tenKhachHang", ellipsis: true },
+        { title: "Điện thoại", dataIndex: "dt", key: "dt", ellipsis: true },
+        { title: "Nợ hiện tại", dataIndex: "noHienTai", key: "noHienTai", render: (v) => (v ? v.toLocaleString("en-US") : 0), ellipsis: true },
+        { title: "Tổng bán", dataIndex: "tongban", key: "tongban", render: (v) => (v ? v.toLocaleString("en-US") : 0), ellipsis: true },
+        {
+            title: "Thao tác",
+            key: "actions",
+            width: 120,
+            render: (_: any, record: CustomerType) => (
+                <Button
+                    danger
+                    size="small"
+                    icon={<DeleteOutlined />}
+                    onClick={() => {
+                        Modal.confirm({
+                            title: "Xóa khách hàng",
+                            content: `Bạn có chắc chắn muốn xóa khách hàng "${record.tenKhachHang}" (${record.maKhachHang})?`,
+                            okText: "Xóa",
+                            cancelText: "Hủy",
+                            okButtonProps: { danger: true },
+                            onOk: async () => {
+                                try {
+                                    console.log("Deleting customer:", record.maKhachHang)
+                                    const res = await fetch(`/api/customers/${record.maKhachHang}`, {
+                                        method: "DELETE",
+                                    })
+                                    const data = await res.json()
+                                    console.log("Delete response:", data, "Status:", res.status)
+
+                                    if (!res.ok) {
+                                        throw new Error(data?.error || "Không thể xóa khách hàng")
+                                    }
+
+                                    setCustomers(customers.filter((c) => c.maKhachHang !== record.maKhachHang))
+                                    message.success("Xóa khách hàng thành công")
+                                } catch (err: any) {
+                                    console.error("Delete error:", err)
+                                    message.error(err.message || "Xóa khách hàng thất bại")
+                                }
+                            },
+                        })
+                    }}
+                >
+                    Xóa
+                </Button>
+            ),
+        },
     ]
 
     const handleShowModal = () => {
@@ -110,7 +157,14 @@ const Customers = () => {
                     </Button>
                 </div>
 
-                <Table dataSource={filteredCustomers} columns={columns} className={styles.table} pagination={{ pageSize: 30 }} rowKey="maKhachHang" />
+                <Table
+                    dataSource={filteredCustomers}
+                    columns={columns}
+                    className={styles.table}
+                    pagination={{ pageSize: 30 }}
+                    rowKey="maKhachHang"
+                    loading={loading}
+                />
 
                 <Modal
                     title="Thêm khách hàng mới"
