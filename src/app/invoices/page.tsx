@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react"
 import styles from "@/styles/invoicesList.module.scss"
 import { ProductType, CustomerType } from "@/types/types"
-import { Button, Modal, Table } from "antd"
+import { Button, Modal, Table, message } from "antd"
 import Menu from "@/components/menu"
 import { renderInvoiceHtml } from "@/ultils/invoiceTemplate"
 
@@ -25,10 +25,12 @@ const InvoicesList = () => {
     const [customers, setCustomers] = useState<CustomerType[]>([])
     const [selected, setSelected] = useState<PaidInvoice | null>(null)
     const [previewVisible, setPreviewVisible] = useState(false)
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         const fetchInvoices = async () => {
             try {
+                setLoading(true)
                 const res = await fetch("/api/invoices")
                 if (!res.ok) throw new Error("Không lấy được danh sách hóa đơn")
                 const data = await res.json()
@@ -37,6 +39,8 @@ const InvoicesList = () => {
                 console.error(err)
                 const stored = localStorage.getItem("PAID_INVOICES")
                 if (stored) setInvoices(JSON.parse(stored))
+            } finally {
+                setLoading(false)
             }
         }
 
@@ -57,21 +61,23 @@ const InvoicesList = () => {
 
     const columns = useMemo(() => {
         return [
-            { title: "Số hóa đơn", dataIndex: "id", key: "id" },
-            { title: "Ngày", dataIndex: "date", key: "date" },
-            { title: "Mã KH", dataIndex: "customerCode", key: "customerCode" },
-            { title: "Tên KH", dataIndex: "customerName", key: "customerName" },
+            { title: "Số hóa đơn", dataIndex: "id", key: "id", ellipsis: true },
+            { title: "Ngày", dataIndex: "date", key: "date", ellipsis: true },
+            { title: "Mã KH", dataIndex: "customerCode", key: "customerCode", ellipsis: true },
+            { title: "Tên KH", dataIndex: "customerName", key: "customerName", ellipsis: true },
             {
                 title: "Tổng",
                 dataIndex: "discountedAmount",
                 key: "discountedAmount",
                 render: (v: number) => v.toLocaleString("en-US"),
+                ellipsis: true,
             },
             {
                 title: "Thao tác",
                 key: "actions",
+                ellipsis: true,
                 render: (_: any, record: PaidInvoice) => (
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                         <Button
                             onClick={() => {
                                 setSelected(record)
@@ -95,18 +101,52 @@ const InvoicesList = () => {
                         >
                             In
                         </Button>
+                        <Button
+                            danger
+                            onClick={() => {
+                                Modal.confirm({
+                                    title: "Xóa hóa đơn",
+                                    content: `Bạn có chắc chắn muốn xóa hóa đơn ${record.id}?`,
+                                    okText: "Xóa",
+                                    cancelText: "Hủy",
+                                    okButtonProps: { danger: true },
+                                    onOk: async () => {
+                                        try {
+                                            console.log("Deleting invoice:", record.id)
+                                            const res = await fetch(`/api/invoices/${record.id}`, {
+                                                method: "DELETE",
+                                            })
+                                            const data = await res.json()
+                                            console.log("Delete response:", data, "Status:", res.status)
+
+                                            if (!res.ok) {
+                                                throw new Error(data?.error || "Không thể xóa hóa đơn")
+                                            }
+
+                                            setInvoices(invoices.filter((inv) => inv.id !== record.id))
+                                            message.success("Xóa hóa đơn thành công")
+                                        } catch (err: any) {
+                                            console.error("Delete error:", err)
+                                            message.error(err.message || "Xóa hóa đơn thất bại")
+                                        }
+                                    },
+                                })
+                            }}
+                        >
+                            Xóa
+                        </Button>
                     </div>
                 ),
             },
         ]
-    }, [])
+    }, [invoices, customers])
 
     return (
         <>
             <Menu />
             <section className={styles.invoices}>
                 <h2 className={styles.invoices__title}>Danh sách hóa đơn đã thanh toán</h2>
-                <Table rowKey="id" dataSource={invoices} columns={columns} pagination={{ pageSize: 10 }} className={styles.table} />
+                <Table rowKey="id" dataSource={invoices} columns={columns} pagination={{ pageSize: 10 }} className={styles.table} loading={loading} />
 
                 <Modal open={previewVisible} onCancel={() => setPreviewVisible(false)} footer={null} width={860}>
                     {selected &&

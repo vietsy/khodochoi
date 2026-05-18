@@ -13,9 +13,11 @@ const ProductsPage = () => {
     const [searchInput, setSearchInput] = useState<string>("")
     const [products, setProducts] = useState<ProductType[]>([])
     const [editId, setEditId] = useState<string | null>(null)
+    const [loading, setLoading] = useState(false)
 
     const fetchProducts = useCallback(async () => {
         try {
+            setLoading(true)
             const response = await fetch("/api/products")
             if (!response.ok) {
                 throw new Error("Không thể tải danh sách sản phẩm")
@@ -28,6 +30,8 @@ const ProductsPage = () => {
             setProducts(withKeys)
         } catch (error) {
             console.error(error)
+        } finally {
+            setLoading(false)
         }
     }, [])
 
@@ -111,7 +115,7 @@ const ProductsPage = () => {
                         Tạo mới
                     </Button>
                 </div>
-                <Table dataSource={filteredProducts} columns={columns} className={styles.table} pagination={{ pageSize: 20 }} />
+                <Table dataSource={filteredProducts} columns={columns} className={styles.table} pagination={{ pageSize: 20 }} loading={loading} />
             </main>
         </>
     )
