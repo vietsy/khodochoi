@@ -1,9 +1,9 @@
 import { NextResponse, NextRequest } from "next/server"
 import { connectMongo } from "@/lib/mongodb"
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = await params
+        const { id } = await context.params
         console.log("Deleting customer with id:", id)
 
         const { db } = await connectMongo()
