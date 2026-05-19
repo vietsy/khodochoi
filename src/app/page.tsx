@@ -233,6 +233,16 @@ const InvoicePage = () => {
                         placeholder="Số lượng"
                         size="large"
                     />
+                    <Button
+                        size="large"
+                        onClick={handleQuantityEnter}
+                        className={styles.search__add}
+                        color="danger"
+                        variant="solid"
+                        aria-label="Thêm sản phẩm vào hóa đơn"
+                    >
+                        Thêm
+                    </Button>
                     {/* Suggest sản phẩm */}
                     {!selectedProduct && searchInput && (
                         <ul className={styles.suggest}>

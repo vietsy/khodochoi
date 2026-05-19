@@ -8,17 +8,22 @@
     background: #0070f4;
     padding: 12px;
     width: 100%;
+
+    @include mixin.tab {
+        flex-direction: column;
+    }
 }
 
 .search {
-    width: calc(40% - 8px);
+    width: calc(35% - 8px);
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
     position: relative;
 
     @include mixin.tab {
-        width: calc(30% - 8px);
+        width: 100%;
+        order: 2;
     }
 
     input {
@@ -28,19 +33,20 @@
     }
 
     &__input {
-        width: calc(100% - 96px);
+        width: calc(100% - 176px);
     }
     &__sl {
-        width: 120px;
-        @include mixin.tab {
-            width: 80px;
-        }
+        width: 80px;
+    }
+    &__add {
+        display: block;
+        width: 80px;
     }
 }
 
 .tabButtons {
     padding: 0 8px;
-    width: calc(60% - 8px);
+    width: calc(65% - 8px);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -48,7 +54,8 @@
     overflow-y: auto;
 
     @include mixin.tab {
-        width: calc(70% - 8px);
+        width: 100%;
+        order: 1;
     }
 
     &::after {
