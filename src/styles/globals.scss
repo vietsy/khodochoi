@@ -24,3 +24,9 @@ body {
 .ant-input-number {
     width: 100%;
 }
+
+.css-var-root.ant-form-css-var {
+    @include mixin.tab {
+        --ant-form-item-margin-bottom: 0;
+    }
+}
