@@ -20,10 +20,9 @@ export async function GET(request: Request) {
         return NextResponse.json(item)
     }
 
-    const products = await collection.find().toArray()
+    const products = await collection.find().sort({ _id: -1 }).toArray()
 
-    const sortedProducts = products.sort((a, b) => dayjs(b.thoiGianTao, "HH:mm DD/MM/YYYY").valueOf() - dayjs(a.thoiGianTao, "HH:mm DD/MM/YYYY").valueOf())
-    return NextResponse.json(sortedProducts)
+    return NextResponse.json(products)
 }
 
 export async function POST(request: Request) {
