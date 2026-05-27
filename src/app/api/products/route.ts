@@ -20,7 +20,8 @@ export async function GET(request: Request) {
         return NextResponse.json(item)
     }
 
-    const products = await collection.find().toArray()
+    const products = await collection.find().sort({ _id: -1 }).toArray()
+
     return NextResponse.json(products)
 }
 

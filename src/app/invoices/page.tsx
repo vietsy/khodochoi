@@ -5,6 +5,7 @@ import { ProductType, CustomerType } from "@/types/types"
 import { Button, Modal, Table, message } from "antd"
 import Menu from "@/components/menu"
 import { renderInvoiceHtml } from "@/ultils/invoiceTemplate"
+import dayjs from "dayjs"
 
 interface PaidInvoice {
     id: string
@@ -28,17 +29,32 @@ const InvoicesList = () => {
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
+        const sortByDateDesc = (arr: any[]) => {
+            return arr.slice().sort((a, b) => {
+                const da = dayjs(a.date, "DD/MM/YYYY HH:mm").valueOf() || 0
+                const db = dayjs(b.date, "DD/MM/YYYY HH:mm").valueOf() || 0
+                return db - da
+            })
+        }
+
         const fetchInvoices = async () => {
             try {
                 setLoading(true)
                 const res = await fetch("/api/invoices")
                 if (!res.ok) throw new Error("Không lấy được danh sách hóa đơn")
                 const data = await res.json()
-                setInvoices(data)
+                setInvoices(sortByDateDesc(data))
             } catch (err) {
                 console.error(err)
                 const stored = localStorage.getItem("PAID_INVOICES")
-                if (stored) setInvoices(JSON.parse(stored))
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored)
+                        setInvoices(sortByDateDesc(parsed))
+                    } catch (e) {
+                        console.error("Invalid PAID_INVOICES in localStorage", e)
+                    }
+                }
             } finally {
                 setLoading(false)
             }

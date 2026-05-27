@@ -122,7 +122,8 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
             date: dayjs().format("DD/MM/YYYY HH:mm"),
             customerCode: customerCode || "",
             customerName: customerName || "",
-            products: items,
+            // snapshot unitPrice for each item so invoice keeps selected price
+            products: items.map((item) => ({ ...item, unitPrice: getPrice(item.product) })),
             totalAmount: totalAmount,
             discount,
             discountedAmount,
@@ -148,7 +149,8 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
             date: dayjs().format("DD/MM/YYYY HH:mm"),
             customerCode: customerCode || "",
             customerName: customerName || "",
-            products: items,
+            // include unitPrice snapshot per item
+            products: items.map((item) => ({ ...item, unitPrice: getPrice(item.product) })),
             totalAmount: totalAmount,
             discount,
             discountedAmount,

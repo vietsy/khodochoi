@@ -7,6 +7,7 @@ import ProductModal from "@/components/productModal/ProductModal"
 import styles from "@/styles/products.module.scss"
 import { ProductType } from "@/types/types"
 import Menu from "@/components/menu"
+import dayjs from "dayjs"
 
 const ProductsPage = () => {
     const [showModal, setShowModal] = useState<boolean>(false)
@@ -85,11 +86,17 @@ const ProductsPage = () => {
         },
         { title: "Mã hàng", dataIndex: "maHang", key: "maHang", ellipsis: true },
         { title: "Tên hàng", dataIndex: "tenHang", key: "tenHang", ellipsis: true },
-        { title: "Giá vốn", dataIndex: "giaVon", key: "giaVon", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0) },
-        { title: "Giá bán sỉ", dataIndex: "giaBanSi", key: "giaBanSi", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0) },
-        { title: "Giá bán lẻ", dataIndex: "giaBanLe", key: "giaBanLe", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0) },
-        { title: "Số lượng", dataIndex: "tonKho", key: "tonKho", width: "120px" },
-        { title: "Thời gian tạo", dataIndex: "thoiGianTao", key: "thoiGianTao", width: "120px" },
+        { title: "Giá vốn", dataIndex: "giaVon", key: "giaVon", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0), responsive: ["sm"] },
+        { title: "Giá bán sỉ", dataIndex: "giaBanSi", key: "giaBanSi", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0), responsive: ["sm"] },
+        { title: "Giá bán lẻ", dataIndex: "giaBanLe", key: "giaBanLe", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0), responsive: ["sm"] },
+        { title: "Số lượng", dataIndex: "tonKho", key: "tonKho", width: "120px", responsive: ["sm"] },
+        {
+            title: "Thời gian tạo",
+            dataIndex: "thoiGianTao",
+            key: "thoiGianTao",
+            width: "120px",
+            responsive: ["sm"],
+        },
     ]
 
     const handleShowModal = () => {
