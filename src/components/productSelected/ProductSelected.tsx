@@ -16,6 +16,7 @@ interface ProductItem {
     product: ProductType
     quantity: number
     note?: string
+    unitPrice?: number
 }
 
 interface ProductSelectedProps2 {
@@ -29,8 +30,13 @@ const ProductSelected = ({ products, priceType, onUpdate }: ProductSelectedProps
 
     // đồng bộ khi props products thay đổi
     useEffect(() => {
-        setItems(products)
-    }, [products])
+        // initialize unitPrice from priceType so user can edit later
+        const init = products.map((p) => ({
+            ...p,
+            unitPrice: priceType === "giaBanSi" ? (p.product.giaBanSi ?? 0) : (p.product.giaBanLe ?? 0),
+        }))
+        setItems(init)
+    }, [products, priceType])
 
     const updateItems = (newItems: ProductItem[]) => {
         setItems(newItems)
@@ -60,7 +66,7 @@ const ProductSelected = ({ products, priceType, onUpdate }: ProductSelectedProps
     return (
         <ul className={styles.products}>
             {items.map((item, index) => {
-                const price = getPrice(item.product)
+                const price = typeof item.unitPrice === "number" ? item.unitPrice : getPrice(item.product)
                 return (
                     <li className={styles.products__item} key={item.product.id}>
                         <span className={styles.products__col}>
@@ -85,7 +91,11 @@ const ProductSelected = ({ products, priceType, onUpdate }: ProductSelectedProps
                                 value={price}
                                 formatter={formatter}
                                 parser={(val) => val?.replace(/\,/g, "") as unknown as number}
-                                readOnly
+                                onChange={(val) => {
+                                    const newItems = [...items]
+                                    newItems[index] = { ...newItems[index], unitPrice: val || 0 }
+                                    updateItems(newItems)
+                                }}
                             />
                         </span>
                         <span className={`${styles.products__col} ${styles.products__total}`}>{total(item.quantity, price)}</span>

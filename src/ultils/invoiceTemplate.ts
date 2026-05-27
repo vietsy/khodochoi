@@ -6,7 +6,8 @@ interface InvoiceData {
     date: string
     customerCode: string
     customerName: string
-    products: { product: ProductType; quantity: number; note?: string }[]
+    // allow unitPrice snapshot per item
+    products: { product: ProductType; quantity: number; note?: string; unitPrice?: number }[]
     totalAmount: number
     discount: number
     discountedAmount: number
@@ -78,7 +79,10 @@ export const renderInvoiceHtml = (invoice: InvoiceData, currentCustomerDebt: num
         }
     })()
 
-    const getPrice = (product: ProductType): number => {
+    // prefer unitPrice snapshot if present, otherwise fall back to product prices
+    const getPrice = (item: { product: ProductType; unitPrice?: number }): number => {
+        if (typeof item.unitPrice === "number") return item.unitPrice
+        const product = item.product
         return product.giaBanLe ?? product.giaBanSi ?? 0
     }
 
@@ -150,8 +154,8 @@ export const renderInvoiceHtml = (invoice: InvoiceData, currentCustomerDebt: num
                         <td>${item.product.tenHang}</td>
                         <td style="text-align: center;">Cái</td>
                         <td style="text-align: center;">${item.quantity}</td>
-                        <td style="text-align: right;">${getPrice(item.product).toLocaleString("en-US")}</td>
-                        <td style="text-align: right;">${(getPrice(item.product) * item.quantity).toLocaleString("en-US")}</td>
+                        <td style="text-align: right;">${getPrice(item).toLocaleString("en-US")}</td>
+                        <td style="text-align: right;">${(getPrice(item) * item.quantity).toLocaleString("en-US")}</td>
                         <td>${item.note ? item.note : ""}</td>
                     </tr>
                 `
