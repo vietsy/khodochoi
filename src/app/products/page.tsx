@@ -24,12 +24,10 @@ const ProductsPage = () => {
                 throw new Error("Không thể tải danh sách sản phẩm")
             }
             const productsData = await response.json()
-            const withKeys = productsData
-                .sort((a: ProductType, b: ProductType) => dayjs(b.thoiGianTao).valueOf() - dayjs(a.thoiGianTao).valueOf())
-                .map((item: ProductType, index: number) => ({
-                    ...item,
-                    key: index,
-                }))
+            const withKeys = productsData.map((item: ProductType, index: number) => ({
+                ...item,
+                key: index,
+            }))
             setProducts(withKeys)
         } catch (error) {
             console.error(error)
@@ -88,11 +86,18 @@ const ProductsPage = () => {
         },
         { title: "Mã hàng", dataIndex: "maHang", key: "maHang", ellipsis: true },
         { title: "Tên hàng", dataIndex: "tenHang", key: "tenHang", ellipsis: true },
-        { title: "Giá vốn", dataIndex: "giaVon", key: "giaVon", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0) },
-        { title: "Giá bán sỉ", dataIndex: "giaBanSi", key: "giaBanSi", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0) },
-        { title: "Giá bán lẻ", dataIndex: "giaBanLe", key: "giaBanLe", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0) },
-        { title: "Số lượng", dataIndex: "tonKho", key: "tonKho", width: "120px" },
-        { title: "Thời gian tạo", dataIndex: "thoiGianTao", key: "thoiGianTao", width: "120px" },
+        { title: "Giá vốn", dataIndex: "giaVon", key: "giaVon", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0), responsive: ["sm"] },
+        { title: "Giá bán sỉ", dataIndex: "giaBanSi", key: "giaBanSi", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0), responsive: ["sm"] },
+        { title: "Giá bán lẻ", dataIndex: "giaBanLe", key: "giaBanLe", ellipsis: true, render: (v) => (v ? v.toLocaleString("en-US") : 0), responsive: ["sm"] },
+        { title: "Số lượng", dataIndex: "tonKho", key: "tonKho", width: "120px", responsive: ["sm"] },
+        {
+            title: "Thời gian tạo",
+            dataIndex: "thoiGianTao",
+            key: "thoiGianTao",
+            width: "120px",
+            sorter: (a, b) => dayjs(b.thoiGianTao).valueOf() - dayjs(a.thoiGianTao).valueOf(),
+            responsive: ["sm"],
+        },
     ]
 
     const handleShowModal = () => {
