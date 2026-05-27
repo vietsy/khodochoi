@@ -24,14 +24,10 @@ const ProductsPage = () => {
                 throw new Error("Không thể tải danh sách sản phẩm")
             }
             const productsData = await response.json()
-            const withKeys = productsData
-                .sort(
-                    (a: ProductType, b: ProductType) => dayjs(b.thoiGianTao, "HH:mm DD/MM/YYYY").valueOf() - dayjs(a.thoiGianTao, "HH:mm DD/MM/YYYY").valueOf()
-                )
-                .map((item: ProductType, index: number) => ({
-                    ...item,
-                    key: index,
-                }))
+            const withKeys = productsData.map((item: ProductType, index: number) => ({
+                ...item,
+                key: index,
+            }))
             setProducts(withKeys)
         } catch (error) {
             console.error(error)
@@ -99,8 +95,6 @@ const ProductsPage = () => {
             dataIndex: "thoiGianTao",
             key: "thoiGianTao",
             width: "120px",
-            sorter: (a, b) => dayjs(a.thoiGianTao, "HH:mm DD/MM/YYYY").valueOf() - dayjs(b.thoiGianTao, "HH:mm DD/MM/YYYY").valueOf(),
-            defaultSortOrder: "descend",
             responsive: ["sm"],
         },
     ]

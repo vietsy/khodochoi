@@ -21,7 +21,9 @@ export async function GET(request: Request) {
     }
 
     const products = await collection.find().toArray()
-    return NextResponse.json(products)
+
+    const sortedProducts = products.sort((a, b) => dayjs(b.thoiGianTao, "HH:mm DD/MM/YYYY").valueOf() - dayjs(a.thoiGianTao, "HH:mm DD/MM/YYYY").valueOf())
+    return NextResponse.json(sortedProducts)
 }
 
 export async function POST(request: Request) {
