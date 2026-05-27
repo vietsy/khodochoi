@@ -16,14 +16,6 @@ const ProductsPage = () => {
     const [editId, setEditId] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
-    const sortByDateDesc = (arr: any[]) => {
-        return arr.slice().sort((a, b) => {
-            const da = dayjs(a.date, "DD/MM/YYYY HH:mm").valueOf() || 0
-            const db = dayjs(b.date, "DD/MM/YYYY HH:mm").valueOf() || 0
-            return db - da
-        })
-    }
-
     const fetchProducts = useCallback(async () => {
         try {
             setLoading(true)
@@ -32,11 +24,13 @@ const ProductsPage = () => {
                 throw new Error("Không thể tải danh sách sản phẩm")
             }
             const productsData = await response.json()
-            const withKeys = productsData.map((item: ProductType, index: number) => ({
-                ...item,
-                key: index,
-            }))
-            setProducts(sortByDateDesc(withKeys))
+            const withKeys = productsData
+                .sort((a: ProductType, b: ProductType) => dayjs(b.thoiGianTao).valueOf() - dayjs(a.thoiGianTao).valueOf())
+                .map((item: ProductType, index: number) => ({
+                    ...item,
+                    key: index,
+                }))
+            setProducts(withKeys)
         } catch (error) {
             console.error(error)
         } finally {
