@@ -7,6 +7,7 @@ import ProductModal from "@/components/productModal/ProductModal"
 import styles from "@/styles/products.module.scss"
 import { ProductType } from "@/types/types"
 import Menu from "@/components/menu"
+import dayjs from "dayjs"
 
 const ProductsPage = () => {
     const [showModal, setShowModal] = useState<boolean>(false)
@@ -14,6 +15,14 @@ const ProductsPage = () => {
     const [products, setProducts] = useState<ProductType[]>([])
     const [editId, setEditId] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
+
+    const sortByDateDesc = (arr: any[]) => {
+        return arr.slice().sort((a, b) => {
+            const da = dayjs(a.date, "DD/MM/YYYY HH:mm").valueOf() || 0
+            const db = dayjs(b.date, "DD/MM/YYYY HH:mm").valueOf() || 0
+            return db - da
+        })
+    }
 
     const fetchProducts = useCallback(async () => {
         try {
@@ -27,7 +36,7 @@ const ProductsPage = () => {
                 ...item,
                 key: index,
             }))
-            setProducts(withKeys)
+            setProducts(sortByDateDesc(withKeys))
         } catch (error) {
             console.error(error)
         } finally {
