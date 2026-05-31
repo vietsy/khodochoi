@@ -21,10 +21,11 @@ export type CustomerType = {
 export type Tab = {
     key: string
     title: string
-    products: { product: ProductType; quantity: number; note?: string }[]
+    products: { product: ProductType; quantity: number; note?: string; unitPrice?: number }[]
     customerCode?: string
     customerName?: string
     paid?: boolean
+    locked?: boolean
     priceType?: "giaBanSi" | "giaBanLe"
     paymentMethod?: string
 }
