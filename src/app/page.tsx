@@ -58,6 +58,10 @@ const InvoicePage = () => {
         }
     }
 
+    const getTierPrice = (product: ProductType, type: "giaBanSi" | "giaBanLe") => {
+        return type === "giaBanSi" ? (product.giaBanSi ?? 0) : (product.giaBanLe ?? 0)
+    }
+
     // Load draft hóa đơn từ DB, fallback localStorage nếu cần
     useEffect(() => {
         const loadDrafts = async () => {
@@ -72,6 +76,7 @@ const InvoicePage = () => {
                         customerCode: tab.customerCode ?? "",
                         customerName: tab.customerName ?? "",
                         paid: tab.paid ?? false,
+                        locked: tab.locked ?? false,
                         priceType: tab.priceType ?? priceType,
                         paymentMethod: tab.paymentMethod ?? "tienMat",
                     }))
@@ -92,6 +97,7 @@ const InvoicePage = () => {
                     customerCode: tab.customerCode ?? "",
                     customerName: tab.customerName ?? "",
                     paid: tab.paid ?? false,
+                    locked: tab.locked ?? false,
                     priceType: tab.priceType ?? priceType,
                     paymentMethod: tab.paymentMethod ?? "tienMat",
                 }))
@@ -107,6 +113,7 @@ const InvoicePage = () => {
                 customerCode: "",
                 customerName: "",
                 paid: false,
+                locked: false,
                 priceType: priceType,
                 paymentMethod: "tienMat",
             }
@@ -126,7 +133,18 @@ const InvoicePage = () => {
 
     const handlePriceTypeChange = (newType: "giaBanSi" | "giaBanLe") => {
         setPriceType(newType)
-        const newTabs = tabs.map((t) => (t.key === activeTab ? { ...t, priceType: newType } : t))
+        const newTabs = tabs.map((t) =>
+            t.key === activeTab
+                ? {
+                      ...t,
+                      priceType: newType,
+                      products: t.products.map((item) => ({
+                          ...item,
+                          unitPrice: getTierPrice(item.product, newType),
+                      })),
+                  }
+                : t
+        )
         setTabs(newTabs)
         saveDrafts(newTabs)
     }
@@ -145,6 +163,7 @@ const InvoicePage = () => {
             customerCode: "",
             customerName: "",
             paid: false,
+            locked: false,
             priceType: priceType,
             paymentMethod: "tienMat",
         }
@@ -155,22 +174,24 @@ const InvoicePage = () => {
     }
 
     const handleRemoveTab = (key: string) => {
-        let newTabs = tabs.filter((tab) => tab.key !== key)
+        const nextTabs = tabs.filter((tab) => tab.key !== key)
 
-        if (newTabs.length === 0) {
-            const defaultTab: Tab = { key: "1", title: "Hóa đơn 1", products: [] }
-            newTabs = [defaultTab]
+        if (nextTabs.length === 0) {
+            const defaultTab: Tab = { key: "1", title: "Hóa đơn 1", products: [], locked: false }
+            setTabs([defaultTab])
             setActiveTab(defaultTab.key)
         } else {
-            setActiveTab(newTabs[0].key)
+            setTabs(nextTabs)
+            setActiveTab(nextTabs[0].key)
         }
 
-        setTabs(newTabs)
-        saveDrafts(newTabs)
+        saveDrafts(nextTabs.length === 0 ? [{ key: "1", title: "Hóa đơn 1", products: [], locked: false }] : nextTabs)
     }
 
     // Khi chọn sản phẩm từ suggest
     const handleSelectProduct = (product: ProductType) => {
+        const currentTab = tabs.find((tab) => tab.key === activeTab)
+        if (currentTab?.locked) return
         setSelectedProduct(product)
         setSearchInput(product.tenHang) // hiển thị tên sản phẩm trong ô search
         setTimeout(() => {
@@ -180,7 +201,8 @@ const InvoicePage = () => {
 
     // Khi Enter số lượng
     const handleQuantityEnter = () => {
-        if (!selectedProduct || quantity <= 0) return
+        const currentTab = tabs.find((tab) => tab.key === activeTab)
+        if (currentTab?.locked || !selectedProduct || quantity <= 0) return
 
         const newTabs = tabs.map((tab) => {
             if (tab.key === activeTab) {
@@ -190,8 +212,10 @@ const InvoicePage = () => {
                 if (existingIndex >= 0) {
                     updatedProducts = [...tab.products]
                     updatedProducts[existingIndex].quantity += quantity
+                    const [updatedItem] = updatedProducts.splice(existingIndex, 1)
+                    updatedProducts.unshift(updatedItem)
                 } else {
-                    updatedProducts = [...tab.products, { product: selectedProduct, quantity }]
+                    updatedProducts = [{ product: selectedProduct, quantity }, ...tab.products]
                 }
                 return { ...tab, products: updatedProducts }
             }
@@ -222,6 +246,7 @@ const InvoicePage = () => {
                         placeholder="Tìm hàng hóa"
                         prefix={<SearchOutlined />}
                         onChange={handleSearch}
+                        disabled={tabs.find((tab) => tab.key === activeTab)?.locked}
                     />
                     <Input
                         type="number"
@@ -232,6 +257,7 @@ const InvoicePage = () => {
                         className={styles.search__sl}
                         placeholder="Số lượng"
                         size="large"
+                        disabled={tabs.find((tab) => tab.key === activeTab)?.locked}
                     />
                     <Button
                         size="large"
@@ -240,11 +266,12 @@ const InvoicePage = () => {
                         color="danger"
                         variant="solid"
                         aria-label="Thêm sản phẩm vào hóa đơn"
+                        disabled={tabs.find((tab) => tab.key === activeTab)?.locked}
                     >
                         Thêm
                     </Button>
                     {/* Suggest sản phẩm */}
-                    {!selectedProduct && searchInput && (
+                    {!tabs.find((tab) => tab.key === activeTab)?.locked && !selectedProduct && searchInput && (
                         <ul className={styles.suggest}>
                             {filteredProducts.map((item) => (
                                 <li onClick={() => handleSelectProduct(item)} key={item.id}>
@@ -265,9 +292,18 @@ const InvoicePage = () => {
                             <button type="button" className={styles.tabButtons__btn}>
                                 {tab.title}
                             </button>
-                            <button type="button" onClick={() => handleRemoveTab(tab.key)} className={styles.tabButtons__close}>
-                                <CloseOutlined />
-                            </button>
+                            {!tab.locked && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleRemoveTab(tab.key)
+                                    }}
+                                    className={styles.tabButtons__close}
+                                >
+                                    <CloseOutlined />
+                                </button>
+                            )}
                         </span>
                     ))}
                     <Button
@@ -286,6 +322,7 @@ const InvoicePage = () => {
                         <ProductSelected
                             products={tab.products}
                             priceType={priceType}
+                            locked={!!tab.locked}
                             onUpdate={(updatedProducts) => {
                                 const newTabs = tabs.map((t) => (t.key === activeTab ? { ...t, products: updatedProducts } : t))
                                 setTabs(newTabs)
@@ -300,6 +337,12 @@ const InvoicePage = () => {
                             saveDrafts={saveDrafts}
                             priceType={priceType}
                             onPriceTypeChange={handlePriceTypeChange}
+                            locked={!!tab.locked}
+                            onToggleLock={() => {
+                                const newTabs = tabs.map((t) => (t.key === activeTab ? { ...t, locked: !t.locked } : t))
+                                setTabs(newTabs)
+                                saveDrafts(newTabs)
+                            }}
                         />
                     </div>
                 ))}

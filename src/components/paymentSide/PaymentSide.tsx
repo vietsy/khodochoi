@@ -1,25 +1,27 @@
 "use client"
 import styles from "@/components/paymentSide/styles/PaymentSide.module.scss"
 import { CustomerType, ProductType, Tab } from "@/types/types"
-import { AutoComplete, Button, Input, InputNumber, InputNumberProps, Modal, Radio, Select } from "antd"
+import { AutoComplete, Button, InputNumber, Modal, Radio, Select } from "antd"
 import dayjs from "dayjs"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { formatter } from "@/ultils/format"
+import { formatter, parseMoney } from "@/ultils/format"
 import { renderInvoiceHtml, numberToVietnameseWords, getInvoiceNumber } from "@/ultils/invoiceTemplate"
 
 interface PaymentSideProps {
-    products: { product: ProductType; quantity: number; note?: string }[]
+    products: { product: ProductType; quantity: number; note?: string; unitPrice?: number }[]
     activeTab: string
     tabs: Tab[]
     setTabs: (tabs: Tab[]) => void
     saveDrafts: (tabs: Tab[]) => void
     priceType: "giaBanSi" | "giaBanLe"
     onPriceTypeChange: (priceType: "giaBanSi" | "giaBanLe") => void
+    locked?: boolean
+    onToggleLock?: () => void
 }
 
-const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType, onPriceTypeChange }: PaymentSideProps) => {
-    const [items, setItems] = useState<{ product: ProductType; quantity: number; note?: string }[]>([])
+const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType, onPriceTypeChange, locked = false, onToggleLock }: PaymentSideProps) => {
+    const [items, setItems] = useState<{ product: ProductType; quantity: number; note?: string; unitPrice?: number }[]>([])
     const [paymentMethod, setPaymentMethod] = useState<string>("tienMat")
     const [discount, setDiscount] = useState<number>(0)
     const [customerPay, setCustomerPay] = useState<number>(0)
@@ -32,8 +34,7 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
     const [customerPayEdited, setCustomerPayEdited] = useState(false)
 
     const router = useRouter()
-
-    const STORAGE_KEY = "INVOICES"
+    const isLocked = locked
 
     useEffect(() => {
         setItems(Array.isArray(products) ? products : [])
@@ -87,7 +88,12 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
     }
 
     const updateCurrentTabCustomer = (code: string, name: string) => {
-        updateCurrentTabFields({ customerCode: code, customerName: name })
+        const customerTitle = name.trim()
+        updateCurrentTabFields({
+            customerCode: code,
+            customerName: name,
+            ...(customerTitle ? { title: customerTitle } : {}),
+        })
     }
 
     const updateCurrentTabFields = (fields: Partial<Tab>) => {
@@ -100,8 +106,20 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
         return priceType === "giaBanSi" ? (product.giaBanSi ?? 0) : (product.giaBanLe ?? 0)
     }
 
+    const getItemPrice = (item: { product: ProductType; unitPrice?: number }) => {
+        return typeof item.unitPrice === "number" ? item.unitPrice : getPrice(item.product)
+    }
+
     const totalQuantity = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items])
-    const totalAmount = useMemo(() => items.reduce((sum, item) => sum + getPrice(item.product) * item.quantity, 0), [items, priceType])
+    const totalAmount = useMemo(
+        () =>
+            items.reduce((sum, item) => {
+                const price =
+                    typeof item.unitPrice === "number" ? item.unitPrice : priceType === "giaBanSi" ? (item.product.giaBanSi ?? 0) : (item.product.giaBanLe ?? 0)
+                return sum + price * item.quantity
+            }, 0),
+        [items, priceType]
+    )
     const discountedAmount = useMemo(() => totalAmount * (1 - discount / 100), [totalAmount, discount])
     const change = useMemo(() => customerPay - discountedAmount, [customerPay, discountedAmount])
 
@@ -123,7 +141,7 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
             customerCode: customerCode || "",
             customerName: customerName || "",
             // snapshot unitPrice for each item so invoice keeps selected price
-            products: items.map((item) => ({ ...item, unitPrice: getPrice(item.product) })),
+            products: items.map((item) => ({ ...item, unitPrice: getItemPrice(item) })),
             totalAmount: totalAmount,
             discount,
             discountedAmount,
@@ -150,7 +168,7 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
             customerCode: customerCode || "",
             customerName: customerName || "",
             // include unitPrice snapshot per item
-            products: items.map((item) => ({ ...item, unitPrice: getPrice(item.product) })),
+            products: items.map((item) => ({ ...item, unitPrice: getItemPrice(item) })),
             totalAmount: totalAmount,
             discount,
             discountedAmount,
@@ -329,6 +347,7 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
                     <Select
                         style={{ width: "100%", fontSize: 16 }}
                         value={priceType}
+                        disabled={isLocked}
                         options={[
                             { value: "giaBanSi", label: "Giá bán sỉ" },
                             { value: "giaBanLe", label: "Giá bán lẻ" },
@@ -344,6 +363,7 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
                         placeholder="Tìm mã hoặc tên khách hàng"
                         variant="underlined"
                         style={{ width: "100%" }}
+                        disabled={isLocked}
                         options={customerOptions}
                         value={customerSearch}
                         onSearch={handleCustomerSearch}
@@ -372,6 +392,7 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
                         min={0}
                         max={100}
                         value={discount}
+                        disabled={isLocked}
                         onChange={(value) => setDiscount(value || 0)}
                     />
                 </div>
@@ -386,12 +407,13 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
                     <InputNumber
                         className={styles.payment__input}
                         formatter={formatter}
-                        parser={(val) => val?.replace(/\,/g, "") as unknown as number}
+                        parser={parseMoney}
                         variant="underlined"
                         value={customerPay}
+                        disabled={isLocked}
                         onChange={(value) => {
                             setCustomerPayEdited(true)
-                            setCustomerPay(value || 0)
+                            setCustomerPay(value ?? 0)
                         }}
                     />
                 </div>
@@ -410,6 +432,7 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
                     <Radio.Group
                         className={styles.payment__radio}
                         value={paymentMethod}
+                        disabled={isLocked}
                         onChange={(e) => {
                             setPaymentMethod(e.target.value)
                             updateCurrentTabFields({ paymentMethod: e.target.value })
@@ -423,18 +446,22 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
             </div>
 
             <div className={styles.payment__btns}>
-                <Button color="danger" variant="dashed" size="large" onClick={handlePreview}>
+                <Button color="danger" variant="dashed" size="large" onClick={handlePreview} disabled={isLocked}>
                     Xem hóa đơn
                 </Button>
-                <Button color="danger" variant="dashed" size="large" onClick={handlePrintInvoice}>
+                <Button color="danger" variant="dashed" size="large" onClick={handlePrintInvoice} disabled={isLocked}>
                     In hóa đơn
+                </Button>
+                <Button color={isLocked ? "default" : "green"} variant="dashed" size="large" style={{ width: "120px" }} onClick={onToggleLock}>
+                    {isLocked ? "Mở" : "Khóa"} HĐ
                 </Button>
                 <Button
                     color={currentPaid ? "default" : "primary"}
                     variant="solid"
                     size="large"
-                    style={{ width: "100%" }}
+                    style={{ width: "calc(100% - 132px)" }}
                     onClick={handlePay}
+                    disabled={isLocked}
                     // disabled={isSaving || currentPaid}
                     loading={isSaving}
                 >
@@ -450,7 +477,7 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
                     <Button key="close" onClick={() => setPreviewVisible(false)}>
                         Đóng
                     </Button>,
-                    <Button key="print" type="primary" onClick={handlePrintInvoice}>
+                    <Button key="print" type="primary" onClick={handlePrintInvoice} disabled={isLocked}>
                         In hóa đơn
                     </Button>,
                 ]}
@@ -501,9 +528,9 @@ const PaymentSide = ({ products, activeTab, tabs, setTabs, saveDrafts, priceType
                                     <td style={{ border: "1px solid #444", padding: 8 }}>{item.product.tenHang}</td>
                                     <td style={{ border: "1px solid #444", padding: 8, textAlign: "center" }}>Cái</td>
                                     <td style={{ border: "1px solid #444", padding: 8, textAlign: "center" }}>{item.quantity}</td>
-                                    <td style={{ border: "1px solid #444", padding: 8, textAlign: "right" }}>{formatted(getPrice(item.product))}</td>
+                                    <td style={{ border: "1px solid #444", padding: 8, textAlign: "right" }}>{formatted(getItemPrice(item))}</td>
                                     <td style={{ border: "1px solid #444", padding: 8, textAlign: "right" }}>
-                                        {formatted(getPrice(item.product) * item.quantity)}
+                                        {formatted(getItemPrice(item) * item.quantity)}
                                     </td>
                                     <td style={{ border: "1px solid #444", padding: 8 }}>{item.note ?? ""}</td>
                                 </tr>

@@ -4,11 +4,18 @@ import type { Tab } from "@/types/types"
 
 const DRAFT_ID = "invoiceDrafts"
 
+export const runtime = "nodejs"
+
 export async function GET() {
-    const { db } = await connectMongo()
-    const collection = db.collection<{ _id: string; tabs: Tab[] }>("drafts")
-    const draft = await collection.findOne({ _id: DRAFT_ID })
-    return NextResponse.json(draft?.tabs ?? [])
+    try {
+        const { db } = await connectMongo()
+        const collection = db.collection<{ _id: string; tabs: Tab[] }>("drafts")
+        const draft = await collection.findOne({ _id: DRAFT_ID })
+        return NextResponse.json(draft?.tabs ?? [])
+    } catch (error) {
+        console.error("GET /api/drafts failed", error)
+        return NextResponse.json([])
+    }
 }
 
 export async function POST(request: Request) {
@@ -27,7 +34,8 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true })
     } catch (error) {
-        return new NextResponse(JSON.stringify({ message: "Không lưu được bản nháp" }), {
+        console.error("POST /api/drafts failed", error)
+        return new NextResponse(JSON.stringify({ message: "Khong luu duoc ban nhap" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         })

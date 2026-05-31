@@ -7,7 +7,7 @@ import type { InputRef, FormProps } from "antd"
 import { nhomHangOptionsData } from "@/__mock__/nhomHang"
 import styles from "@/components/productModal/styles/ProductModal.module.scss"
 import { ProductType } from "@/types/types"
-import { formatter } from "@/ultils/format"
+import { formatter, parseMoney } from "@/ultils/format"
 
 interface ProductModalProps {
     closeModal: (value: boolean) => void
@@ -193,17 +193,17 @@ const ProductModal = ({ closeModal, editId, setEditId, onSaved }: ProductModalPr
                             </div>
                             <div className={styles.form__row}>
                                 <Form.Item layout="vertical" label="Giá vốn (vnđ)" name="giaVon">
-                                    <InputNumber<number> formatter={formatter} parser={(value) => value?.replace(/\$\s?|(,*)/g, "") as unknown as number} />
+                                    <InputNumber<number> formatter={formatter} parser={parseMoney} />
                                 </Form.Item>
                             </div>
                             <div className={styles.form__row}>
                                 <Form.Item layout="vertical" label="Giá bán sỉ" name="giaBanSi">
-                                    <InputNumber<number> formatter={formatter} parser={(value) => value?.replace(/\$\s?|(,*)/g, "") as unknown as number} />
+                                    <InputNumber<number> formatter={formatter} parser={parseMoney} />
                                 </Form.Item>
                             </div>
                             <div className={styles.form__row}>
                                 <Form.Item layout="vertical" label="Giá bán lẻ" name="giaBanLe">
-                                    <InputNumber<number> formatter={formatter} parser={(value) => value?.replace(/\$\s?|(,*)/g, "") as unknown as number} />
+                                    <InputNumber<number> formatter={formatter} parser={parseMoney} />
                                 </Form.Item>
                             </div>
                             <div className={styles.form__row}>

@@ -5,3 +5,8 @@ export const formatter: InputNumberProps<number>["formatter"] = (value) => {
     const v = `${start}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
     return `${end ? `${v}.${end}` : `${v}`}`
 }
+
+export const parseMoney: InputNumberProps<number>["parser"] = (value) => {
+    const parsed = Number(`${value ?? ""}`.replace(/,/g, ""))
+    return Number.isFinite(parsed) ? parsed : 0
+}

@@ -5,7 +5,7 @@ import { PlusOutlined, SearchOutlined, DeleteOutlined } from "@ant-design/icons"
 import type { TableColumnsType } from "antd"
 import styles from "@/styles/products.module.scss"
 import Menu from "@/components/menu"
-import { formatter } from "@/ultils/format"
+import { formatter, parseMoney } from "@/ultils/format"
 import { CustomerType } from "@/types/types"
 
 const Customers = () => {
@@ -185,10 +185,10 @@ const Customers = () => {
                             <Input />
                         </Form.Item>
                         <Form.Item label="Nợ hiện tại" name="noHienTai">
-                            <InputNumber style={{ width: "100%" }} formatter={formatter} parser={(val) => val?.replace(/\,/g, "") as unknown as number} />
+                            <InputNumber style={{ width: "100%" }} formatter={formatter} parser={parseMoney} />
                         </Form.Item>
                         <Form.Item label="Tổng bán" name="tongban">
-                            <InputNumber style={{ width: "100%" }} formatter={formatter} parser={(val) => val?.replace(/\,/g, "") as unknown as number} />
+                            <InputNumber style={{ width: "100%" }} formatter={formatter} parser={parseMoney} />
                         </Form.Item>
                     </Form>
                 </Modal>
